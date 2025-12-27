@@ -21,6 +21,11 @@ Tablecop/AlignMethods:
   Enabled: true
   VersionAdded: "0.1.0"
 
+Tablecop/CondenseIn:
+  Description: "Condense multi-line `in` clauses (pattern matching) to single lines when possible."
+  Enabled: true
+  VersionAdded: "0.1.0"
+
 Tablecop/CondenseWhen:
   Description: "Condense multi-line `when` clauses to single lines when possible."
   Enabled: true
