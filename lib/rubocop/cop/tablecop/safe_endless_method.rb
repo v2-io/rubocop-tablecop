@@ -66,6 +66,16 @@ module RuboCop
           # Body must be single expression (not begin block with multiple children)
           return false if node.body.begin_type?
 
+          # ...and must not CONTAIN a multi-statement sequence anywhere
+          # (e.g. `@memo ||= begin; a; b; end` — body is an or_asgn, so
+          # the check above misses it, and it is not a {}/do-end block so
+          # contains_multi_statement_block? misses it too). Collapsing its
+          # newlines to spaces would jam `a b` with no separator → invalid
+          # Ruby. This was a real corruption: rubocop-tablecop#<safe-
+          # endless> turned a valid memoized method into an unparseable
+          # one in a downstream project.
+          return false if contains_multi_statement_sequence?(node.body)
+
           # No heredocs
           return false if contains_heredoc?(node.body)
 
@@ -149,6 +159,19 @@ module RuboCop
           end
 
           false
+        end
+
+        # True if `body` is, or contains anywhere, a statement sequence
+        # with more than one statement. Two AST shapes (verified, not
+        # assumed): an implicit multi-statement body is a `:begin`
+        # sequence; an explicit `begin … end` is a `:kwbegin` whose
+        # children ARE the statements (no inner `:begin`). Either with
+        # >1 child is unsafe to space-join. Single-statement `begin x
+        # end` is a 1-child :kwbegin and stays convertible.
+        def contains_multi_statement_sequence?(body)
+          return false unless body
+
+          body.each_node(:begin, :kwbegin).any? { |seq| seq.children.size > 1 }
         end
 
         def contains_complex_control_flow?(node)

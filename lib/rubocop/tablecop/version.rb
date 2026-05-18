@@ -4,7 +4,7 @@ module RuboCop
   module Tablecop
     # Version information for rubocop-tablecop.
     module Version
-      STRING = "0.3.0"
+      STRING = "0.3.1"
 
       def self.document_version
         STRING.match('\d+\.\d+').to_s

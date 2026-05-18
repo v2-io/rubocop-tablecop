@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-05-18
+
+### Fixed
+
+- **`Tablecop/SafeEndlessMethod` no longer corrupts methods whose body
+  contains a multi-statement `begin … end` nested as a sub-expression**
+  (e.g. the memoization idiom `@memo ||= begin; a; b; end`). The body
+  is an `or_asgn`, so the existing direct-body `:begin` guard missed
+  it, and it is not a `{}`/`do-end` block so the block guard missed it
+  too; autocorrect collapsed `a\n b` into `a b` (no separator) →
+  syntactically invalid Ruby. Found when it broke a downstream project
+  at parse time. Single-statement `begin x end` still converts.
+
+> Note: 0.3.0 was released without a changelog entry; entries resume
+> here rather than reconstruct unrecorded history.
+
 ## [0.2.0] - 2025-12-13
 
 ### Changed

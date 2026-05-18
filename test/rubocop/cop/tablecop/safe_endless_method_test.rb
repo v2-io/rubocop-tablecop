@@ -190,6 +190,43 @@ class SafeEndlessMethodTest < Minitest::Test
     assert_no_offenses(source)
   end
 
+  # Regression: a multi-statement `begin … end` nested as a
+  # sub-expression (here the RHS of `||=`, the classic memoization
+  # idiom). The method body is an `or_asgn`, not a :begin, so the
+  # direct-body guard missed it; it is not a {}/do-end block either.
+  # Endless-converting it collapsed `a\n b` to `a b` → invalid Ruby
+  # that broke a downstream project at parse time. Must be skipped.
+  def test_skips_multi_statement_begin_in_memoization
+    source = <<~RUBY
+      def records
+        @records ||= begin
+          csvs = glob.sort
+          Parser.parse_files(csvs)
+        end
+      end
+    RUBY
+
+    assert_no_offenses(source)
+  end
+
+  # Single-statement explicit `begin … end` stays convertible — it
+  # remains valid Ruby when newlines collapse to spaces.
+  def test_converts_single_statement_begin
+    source = <<~RUBY
+      def value
+        begin
+          compute
+        end
+      end
+    RUBY
+
+    expected = <<~RUBY
+      def value = begin compute end
+    RUBY
+
+    assert_correction(source, expected)
+  end
+
   # ===========================================================================
   # Edge Cases
   # ===========================================================================
